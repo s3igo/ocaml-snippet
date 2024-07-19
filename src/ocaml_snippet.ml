@@ -1,12 +1,28 @@
+(** VSCode Snippet Extractor for OCaml Projects
+
+    This module provides functionality to extract VSCode snippets from OCaml project files.
+    It searches for let bindings and type declarations marked with [@@snippet] attributes,
+    and generates a JSON output compatible with VSCode's snippet format.
+
+    Usage:
+    ocaml-snippet <PROJECT_DIR>
+
+    where <PROJECT_DIR> is the path to the OCaml project directory.
+*)
+
 open Ppxlib
 open Cmdliner
 
-(* Data structure to store the parsed result *)
+(** Data structure to store the parsed result *)
 type parsed_item =
-  | Let_binding of string * string
-  | Type_decl of string * string
+  | Let_binding of string * string  (** Source code and payload for let bindings *)
+  | Type_decl of string * string    (** Source code and payload for type declarations *)
 
-(* Helper function to extract source code from a location and remove the attribute *)
+(** Extract source code from a file given a location and remove the snippet attribute
+    @param filename The name of the file to extract from
+    @param loc The location of the code in the file
+    @return The extracted and cleaned source code
+*)
 let extract_source_code filename loc =
   let ic = open_in filename in
   let len = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum in
@@ -19,7 +35,10 @@ let extract_source_code filename loc =
   let regex = Str.regexp "\\[@@snippet[^]]*\\]" in
   Str.global_replace regex "" code |> String.trim
 
-(* Function to extract payload from an attribute *)
+(** Extract payload from an attribute
+    @param payload The attribute payload
+    @return An option containing the extracted payload string, or None if extraction fails
+*)
 let extract_payload = function
   | PStr [ { pstr_desc = Pstr_eval (expr, _); _ } ] -> (
       match expr with
@@ -28,7 +47,11 @@ let extract_payload = function
       | _ -> None)
   | _ -> None
 
-(* Function to convert source code to VSCode snippet format *)
+(** Convert source code to VSCode snippet format
+    @param payload The snippet identifier
+    @param source_code The source code of the snippet
+    @return A tuple containing the payload and the VSCode snippet JSON object
+*)
 let to_vscode_snippet payload source_code =
   let lines = String.split_on_char '\n' source_code in
   let body = `List (List.map (fun line -> `String line) lines) in
@@ -41,7 +64,11 @@ let to_vscode_snippet payload source_code =
       ] )
 
 [@@@ocamlformat "disable"]
-(* Function to traverse the AST and extract elements with specified attributes *)
+(** Recursively traverse the AST and extract elements with specified attributes
+    @param filename The name of the file being processed
+    @param ast The abstract syntax tree to traverse
+    @return A list of parsed items (let bindings and type declarations)
+*)
 let rec find_items filename = function
   | [] -> []
   | item :: rest -> (
@@ -76,7 +103,10 @@ let rec find_items filename = function
     | _ -> find_items filename rest)
 [@@@ocamlformat "enable"]
 
-(* Function to search for elements with specific attributes in source code *)
+(** Search for elements with specific attributes in source code
+    @param filename The name of the file to process
+    @return A list of parsed items from the file
+*)
 let find_attributed_items filename =
   let ic = open_in filename in
   let lexbuf = Lexing.from_channel ic in
@@ -84,7 +114,10 @@ let find_attributed_items filename =
   close_in ic;
   find_items filename ast
 
-(* Function to recursively process all .ml files in a directory *)
+(** Recursively process all .ml files in a directory
+    @param dir The directory to process
+    @return A list of parsed items from all .ml files in the directory and its subdirectories
+*)
 let rec process_directory dir =
   let entries = Sys.readdir dir in
   entries
@@ -97,7 +130,9 @@ let rec process_directory dir =
          else acc)
        []
 
-(* Main function *)
+(** Main function to run the snippet extractor
+    @param project_dir The root directory of the OCaml project
+*)
 let run project_dir =
   let items = process_directory project_dir in
   let snippets =
@@ -110,7 +145,7 @@ let run project_dir =
   let combined_json = `Assoc snippets in
   print_endline (Yojson.Basic.pretty_to_string combined_json)
 
-(* Command line interface *)
+(* Command line interface setup *)
 let project_dir =
   let doc = "Path to the OCaml project directory" in
   Arg.(required & pos 0 (some dir) None & info [] ~docv:"PROJECT_DIR" ~doc)
@@ -124,10 +159,11 @@ let cmd =
       `S Manpage.s_description;
       `P
         "This program extracts VSCode snippets from OCaml project files marked \
-         with [@@snippet] attributes. The result will be printed to stdout.";
+         with [@@snippet] attributes. The result will be printed to stdout in JSON format.";
     ]
   in
   let info = Cmd.info "ocaml-snippet" ~version:"0.1.0" ~doc ~man in
   Cmd.v info term
 
+(* Entry point *)
 let () = Cmd.eval cmd |> exit
