@@ -12,8 +12,8 @@ let extract_source_code filename loc =
   really_input ic buf 0 len;
   close_in ic;
   let code = Bytes.to_string buf in
-  (* Remove the [@@my_attr] attribute *)
-  let regex = Str.regexp "\\[@@my_attr\\]" in
+  (* Remove the [@@snippet] attribute *)
+  let regex = Str.regexp "\\[@@snippet\\]" in
   Str.global_replace regex "" code |> String.trim
 
 [@@@ocamlformat "disable"]
@@ -28,7 +28,7 @@ let rec find_items filename = function
           match vb.pvb_pat.ppat_desc with
           | Ppat_var { txt = _; _ }
             when vb.pvb_attributes |> List.exists (fun (attr : attribute) ->
-              String.equal attr.attr_name.txt "my_attr")
+              String.equal attr.attr_name.txt "snippet")
                 -> Some (Let_binding (extract_source_code filename loc))
           | _ -> None)
       in
@@ -39,7 +39,7 @@ let rec find_items filename = function
           match td.ptype_name.txt with
           | _
             when td.ptype_attributes |> List.exists (fun (attr : attribute) ->
-              String.equal attr.attr_name.txt "my_attr")
+              String.equal attr.attr_name.txt "snippet")
                 -> Some (Type_decl (extract_source_code filename loc))
           | _ -> None)
       in
