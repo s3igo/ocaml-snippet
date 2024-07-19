@@ -1,5 +1,4 @@
 open Ppxlib
-open Yojson.Basic
 
 (* Data structure to store the parsed result *)
 type parsed_item =
@@ -32,19 +31,13 @@ let extract_payload = function
 let to_vscode_snippet payload source_code =
   let lines = String.split_on_char '\n' source_code in
   let body = `List (List.map (fun line -> `String line) lines) in
-  let json =
+  ( payload,
     `Assoc
       [
-        ( payload,
-          `Assoc
-            [
-              ("prefix", `String payload);
-              ("body", body);
-              ("description", `String "Generated snippet");
-            ] );
-      ]
-  in
-  Yojson.Basic.pretty_to_string json
+        ("prefix", `String payload);
+        ("body", body);
+        ("description", `String "Generated snippet");
+      ] )
 
 [@@@ocamlformat "disable"]
 (* Function to traverse the AST and extract elements with specified attributes *)
@@ -90,20 +83,19 @@ let find_attributed_items filename =
   close_in ic;
   find_items filename ast
 
-(* Debug output *)
+(* Main function *)
 let () =
   let filename = "_example.ml" in
   let items = find_attributed_items filename in
-  List.iter
-    (function
-      | Let_binding (source_code, payload) ->
-          Printf.printf "Found let binding in %s with payload '%s':\n%s\n"
-            filename payload source_code;
-          Printf.printf "VSCode snippet JSON:\n%s\n\n"
-            (to_vscode_snippet payload source_code)
-      | Type_decl (source_code, payload) ->
-          Printf.printf "Found type declaration in %s with payload '%s':\n%s\n"
-            filename payload source_code;
-          Printf.printf "VSCode snippet JSON:\n%s\n\n"
-            (to_vscode_snippet payload source_code))
-    items
+  let snippets =
+    List.map
+      (function
+        | Let_binding (source_code, payload) ->
+            to_vscode_snippet payload source_code
+        | Type_decl (source_code, payload) ->
+            to_vscode_snippet payload source_code)
+      items
+  in
+  let combined_json = `Assoc snippets in
+  Printf.printf "Combined VSCode snippets JSON:\n%s\n"
+    (Yojson.Basic.pretty_to_string combined_json)
