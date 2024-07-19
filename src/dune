@@ -1,4 +1,4 @@
 (executable
  (name ocaml_snippet)
  (public_name ocaml-snippet)
- (libraries ppxlib))
+ (libraries str ppxlib))

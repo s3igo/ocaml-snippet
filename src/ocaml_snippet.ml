@@ -3,7 +3,7 @@ open Ppxlib
 (* Data structure to store the parsed result *)
 type parsed_item = Let_binding of string | Type_decl of string
 
-(* Helper function to extract source code from a location *)
+(* Helper function to extract source code from a location and remove the attribute *)
 let extract_source_code filename loc =
   let ic = open_in filename in
   let len = loc.loc_end.pos_cnum - loc.loc_start.pos_cnum in
@@ -11,7 +11,10 @@ let extract_source_code filename loc =
   seek_in ic loc.loc_start.pos_cnum;
   really_input ic buf 0 len;
   close_in ic;
-  Bytes.to_string buf
+  let code = Bytes.to_string buf in
+  (* Remove the [@@my_attr] attribute *)
+  let regex = Str.regexp "\\[@@my_attr\\]" in
+  Str.global_replace regex "" code |> String.trim
 
 [@@@ocamlformat "disable"]
 (* Function to traverse the AST and extract elements with specified attributes *)
