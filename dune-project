@@ -7,4 +7,5 @@
  (name ocaml_snippet)
  (depends
   (ppxlib (>= 0.32.1))
-  (yojson (>= 2.2.2))))
+  (yojson (>= 2.2.2))
+  (cmdliner (>= 1.3.0))))

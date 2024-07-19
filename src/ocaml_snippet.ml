@@ -1,4 +1,5 @@
 open Ppxlib
+open Cmdliner
 
 (* Data structure to store the parsed result *)
 type parsed_item =
@@ -86,30 +87,47 @@ let find_attributed_items filename =
 (* Function to recursively process all .ml files in a directory *)
 let rec process_directory dir =
   let entries = Sys.readdir dir in
-  Array.fold_left
-    (fun acc entry ->
-      let path = Filename.concat dir entry in
-      if Sys.is_directory path then acc @ process_directory path
-      else if Filename.check_suffix path ".ml" then
-        acc @ find_attributed_items path
-      else acc)
-    [] entries
+  entries
+  |> Array.fold_left
+       (fun acc entry ->
+         let path = Filename.concat dir entry in
+         if Sys.is_directory path then acc @ process_directory path
+         else if Filename.check_suffix path ".ml" then
+           acc @ find_attributed_items path
+         else acc)
+       []
 
 (* Main function *)
-let () =
-  if Array.length Sys.argv < 2 then
-    Printf.eprintf "Usage: %s <project_directory>\n" Sys.argv.(0)
-  else
-    let project_dir = Sys.argv.(1) in
-    let items = process_directory project_dir in
-    let snippets =
-      List.map
-        (function
-          | Let_binding (source_code, payload) ->
-              to_vscode_snippet payload source_code
-          | Type_decl (source_code, payload) ->
-              to_vscode_snippet payload source_code)
-        items
-    in
-    let combined_json = `Assoc snippets in
-    print_endline (Yojson.Basic.pretty_to_string combined_json)
+let run project_dir =
+  let items = process_directory project_dir in
+  let snippets =
+    items
+    |> List.map (function
+           | Let_binding (source_code, payload)
+           | Type_decl (source_code, payload)
+           -> to_vscode_snippet payload source_code)
+  in
+  let combined_json = `Assoc snippets in
+  print_endline (Yojson.Basic.pretty_to_string combined_json)
+
+(* Command line interface *)
+let project_dir =
+  let doc = "Path to the OCaml project directory" in
+  Arg.(required & pos 0 (some dir) None & info [] ~docv:"PROJECT_DIR" ~doc)
+
+let term = Term.(const run $ project_dir)
+
+let cmd =
+  let doc = "Extract VSCode snippets from OCaml project files" in
+  let man =
+    [
+      `S Manpage.s_description;
+      `P
+        "This program extracts VSCode snippets from OCaml project files marked \
+         with [@@snippet] attributes. The result will be printed to stdout.";
+    ]
+  in
+  let info = Cmd.info "ocaml-snippet" ~version:"0.1.0" ~doc ~man in
+  Cmd.v info term
+
+let () = Cmd.eval cmd |> exit
