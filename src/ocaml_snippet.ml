@@ -83,19 +83,33 @@ let find_attributed_items filename =
   close_in ic;
   find_items filename ast
 
+(* Function to recursively process all .ml files in a directory *)
+let rec process_directory dir =
+  let entries = Sys.readdir dir in
+  Array.fold_left
+    (fun acc entry ->
+      let path = Filename.concat dir entry in
+      if Sys.is_directory path then acc @ process_directory path
+      else if Filename.check_suffix path ".ml" then
+        acc @ find_attributed_items path
+      else acc)
+    [] entries
+
 (* Main function *)
 let () =
-  let filename = "_example.ml" in
-  let items = find_attributed_items filename in
-  let snippets =
-    List.map
-      (function
-        | Let_binding (source_code, payload) ->
-            to_vscode_snippet payload source_code
-        | Type_decl (source_code, payload) ->
-            to_vscode_snippet payload source_code)
-      items
-  in
-  let combined_json = `Assoc snippets in
-  Printf.printf "Combined VSCode snippets JSON:\n%s\n"
-    (Yojson.Basic.pretty_to_string combined_json)
+  if Array.length Sys.argv < 2 then
+    Printf.eprintf "Usage: %s <project_directory>\n" Sys.argv.(0)
+  else
+    let project_dir = Sys.argv.(1) in
+    let items = process_directory project_dir in
+    let snippets =
+      List.map
+        (function
+          | Let_binding (source_code, payload) ->
+              to_vscode_snippet payload source_code
+          | Type_decl (source_code, payload) ->
+              to_vscode_snippet payload source_code)
+        items
+    in
+    let combined_json = `Assoc snippets in
+    print_endline (Yojson.Basic.pretty_to_string combined_json)
