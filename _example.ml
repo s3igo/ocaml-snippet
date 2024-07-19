@@ -1,5 +1,4 @@
 let foo x =
-  (* This is a comment *)
   x + 1
 [@@snippet bar]
 
