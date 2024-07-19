@@ -5,4 +5,6 @@
 
 (package
  (name ocaml_snippet)
- (depends (ppxlib (>= 0.32.1))))
+ (depends
+  (ppxlib (>= 0.32.1))
+  (yojson (>= 2.2.2))))

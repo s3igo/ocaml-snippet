@@ -1,4 +1,5 @@
 open Ppxlib
+open Yojson.Basic
 
 (* Data structure to store the parsed result *)
 type parsed_item =
@@ -26,6 +27,24 @@ let extract_payload = function
       | { pexp_desc = Pexp_ident { txt = Lident s; _ }; _ } -> Some s
       | _ -> None)
   | _ -> None
+
+(* Function to convert source code to VSCode snippet format *)
+let to_vscode_snippet payload source_code =
+  let lines = String.split_on_char '\n' source_code in
+  let body = `List (List.map (fun line -> `String line) lines) in
+  let json =
+    `Assoc
+      [
+        ( payload,
+          `Assoc
+            [
+              ("prefix", `String payload);
+              ("body", body);
+              ("description", `String "Generated snippet");
+            ] );
+      ]
+  in
+  Yojson.Basic.pretty_to_string json
 
 [@@@ocamlformat "disable"]
 (* Function to traverse the AST and extract elements with specified attributes *)
@@ -79,8 +98,12 @@ let () =
     (function
       | Let_binding (source_code, payload) ->
           Printf.printf "Found let binding in %s with payload '%s':\n%s\n"
-            filename payload source_code
+            filename payload source_code;
+          Printf.printf "VSCode snippet JSON:\n%s\n\n"
+            (to_vscode_snippet payload source_code)
       | Type_decl (source_code, payload) ->
           Printf.printf "Found type declaration in %s with payload '%s':\n%s\n"
-            filename payload source_code)
+            filename payload source_code;
+          Printf.printf "VSCode snippet JSON:\n%s\n\n"
+            (to_vscode_snippet payload source_code))
     items
