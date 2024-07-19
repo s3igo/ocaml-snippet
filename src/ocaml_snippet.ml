@@ -20,16 +20,11 @@ let extract_source_code filename loc =
 
 (* Function to extract payload from an attribute *)
 let extract_payload = function
-  | PStr
-      [
-        {
-          pstr_desc =
-            Pstr_eval
-              ({ pexp_desc = Pexp_ident { txt = Lident payload; _ }; _ }, _);
-          _;
-        };
-      ] ->
-      Some payload
+  | PStr [ { pstr_desc = Pstr_eval (expr, _); _ } ] -> (
+      match expr with
+      | { pexp_desc = Pexp_constant (Pconst_string (s, _, _)); _ } -> Some s
+      | { pexp_desc = Pexp_ident { txt = Lident s; _ }; _ } -> Some s
+      | _ -> None)
   | _ -> None
 
 [@@@ocamlformat "disable"]

@@ -3,6 +3,11 @@ let foo x =
   x + 1
 [@@snippet bar]
 
+let hoge x =
+  (* This is a comment *)
+  x + 1
+[@@snippet "fuga"]
+
 let fake x = x + 1 [@@fake_attr]
 
 type fuga = string [@@snippet]
