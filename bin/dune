@@ -1,0 +1,5 @@
+(executable
+ (name main)
+ (public_name ocaml-snippet)
+ (package ocaml_snippet)
+ (libraries lib cmdliner))

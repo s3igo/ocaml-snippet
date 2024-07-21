@@ -1,0 +1,4 @@
+(library
+ (name lib)
+ (package ocaml_snippet_lib)
+ (libraries ppxlib str yojson))
