@@ -7,10 +7,8 @@
 (package
  (name ocaml_snippet)
  (depends
-  (cmdliner (>= 1.3.0))))
-
-(package
- (name ocaml_snippet_lib)
- (depends
+  (cmdliner (>= 1.3.0))
   (ppxlib (>= 0.32.1))
-  (yojson (>= 2.2.2))))
+  (yojson (>= 2.2.2))
+ ;  (alcotest (and :with-test (>= 1.7.0)))
+  ))

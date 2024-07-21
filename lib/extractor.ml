@@ -10,11 +10,6 @@ let extract_source_code filename (loc : Ppxlib.location) =
   let regex = Str.regexp "\\[@@snippet[^]]*\\]" in
   Str.global_replace regex "" code |> String.trim
 
-
-(** Extract payload from an attribute
-    @param payload The attribute payload
-    @return An option containing the extracted payload string, or None if extraction fails
-*)
 let extract_payload = function
   | Ppxlib.PStr [ { pstr_desc = Pstr_eval (expr, _); _ } ] -> (
       match expr with
