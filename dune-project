@@ -10,5 +10,5 @@
   (cmdliner (>= 1.3.0))
   (ppxlib (>= 0.32.1))
   (yojson (>= 2.2.2))
- ;  (alcotest (and :with-test (>= 1.7.0)))
+  ; (alcotest (and :with-test (>= 1.7.0)))
   ))

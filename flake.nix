@@ -35,6 +35,7 @@
         overlay = final: prev: {
           ${package} = prev.${package}.overrideAttrs (_: {
             doNixSupport = false;
+            DUNE_PROFILE = "release";
           });
         };
         scope' = scope.overrideScope' overlay;
